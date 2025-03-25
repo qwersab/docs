@@ -4,7 +4,7 @@
 本文档描述了校园二手交易平台的API设计规范，包括RESTful API设计原则、资源关系、通用模式、安全认证等内容。
 
 ## RESTful API 设计
-
+在线预览：https://apifox.com/apidoc/shared-077483db-ef3c-4a28-8611-49c64dcab047
 ### 基本原则
 1. 使用HTTP方法表示操作语义
    - GET: 获取资源
