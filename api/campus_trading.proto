@@ -1,0 +1,324 @@
+syntax = "proto3";
+package campus_trading.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ------------------- 基础消息类型 -------------------
+message User {
+  string id = 1;              // UUID
+  string username = 2;
+  string email = 3;
+  string profile_picture = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp login_at = 6;
+}
+
+message Product {
+  string id = 1;              // UUID
+  string name = 2;
+  string detail = 3;
+  repeated string cover_list = 4;
+  int32 old_level = 5;        // 新旧程度：1-10
+  string category_id = 6;     // 关联 Category
+  string user_id = 7;         // 关联 User
+  int32 inventory = 8;
+  double price = 9;
+  bool is_bargain = 10;       // 是否支持砍价
+  google.protobuf.Timestamp create_at = 11;
+}
+
+message Order {
+  string id = 1;              // UUID
+  string code = 2;            // 订单编号
+  string detail = 3;          // 订单备注
+  string product_id = 4;      // 关联 Product
+  double buy_price = 5;
+  OrderStatus status = 6;
+  google.protobuf.Timestamp trade_time = 7;
+  google.protobuf.Timestamp create_time = 8;
+}
+
+message Comment {
+  string id = 1;              // UUID
+  string user_id = 2;         // 关联 User
+  string product_id = 3;      // 关联 Product
+  string content = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message Interaction {
+  string id = 1;              // UUID
+  string user_id = 2;         // 关联 User
+  string product_id = 3;      // 关联 Product
+  InteractionType type = 4;
+  google.protobuf.Timestamp create_time = 5;
+}
+
+message Category {
+  string id = 1;              // UUID
+  string name = 2;
+  bool is_use = 3;            // 是否启用
+}
+
+message Message {
+  string id = 1;              // UUID
+  string user_id = 2;         // 接收者用户ID
+  string content = 3;
+  bool is_read = 4;
+  google.protobuf.Timestamp create_time = 5;
+}
+
+// ------------------- 枚举类型 -------------------
+enum OrderStatus {
+  ORDER_STATUS_PENDING = 0;    // 待付款
+  ORDER_STATUS_PAID = 1;       // 已付款
+  ORDER_STATUS_SHIPPED = 2;    // 已发货
+  ORDER_STATUS_COMPLETED = 3;  // 已完成
+  ORDER_STATUS_CANCELLED = 4;  // 已取消
+}
+
+enum InteractionType {
+  INTERACTION_VIEW = 1;        // 浏览
+  INTERACTION_FAVORITE = 2;    // 收藏
+  INTERACTION_WANT = 3;        // 想要
+}
+
+// ------------------- 请求/响应结构 -------------------
+
+// 商品分页请求
+message ListProductsRequest {
+  optional string category_id = 1;
+  optional double min_price = 2;
+  optional double max_price = 3;
+  int32 page = 4;
+  int32 size = 5;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  Pagination pagination = 2;
+}
+
+// 订单分页请求
+message ListOrdersRequest {
+  optional OrderStatus status = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  Pagination pagination = 2;
+}
+
+message Pagination {
+  int32 total = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+// ------------------- 服务定义 -------------------
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc Register(RegisterRequest) returns (User);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc UpdatePassword(UpdatePasswordRequest) returns (google.protobuf.Empty);
+}
+
+service ProductService {
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc GetProduct(GetProductRequest) returns (Product);
+  rpc CreateProduct(CreateProductRequest) returns (Product);
+  rpc UpdateProduct(UpdateProductRequest) returns (Product);
+  rpc DeleteProduct(DeleteProductRequest) returns (google.protobuf.Empty);
+  rpc ListUserProducts(ListUserProductsRequest) returns (ListProductsResponse);
+}
+
+service OrderService {
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc CreateOrder(CreateOrderRequest) returns (Order);
+  rpc UpdateOrder(UpdateOrderRequest) returns (Order);
+  rpc DeleteOrder(DeleteOrderRequest) returns (google.protobuf.Empty);
+}
+
+service CommentService {
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc CreateComment(CreateCommentRequest) returns (Comment);
+  rpc GetComment(GetCommentRequest) returns (Comment);
+}
+
+service InteractionService {
+  rpc ListInteractions(ListInteractionsRequest) returns (ListInteractionsResponse);
+  rpc CreateInteraction(CreateInteractionRequest) returns (Interaction);
+  rpc GetUserProductInteraction(GetUserProductInteractionRequest) returns (Interaction);
+  rpc DeleteInteraction(DeleteInteractionRequest) returns (google.protobuf.Empty);
+}
+
+service CategoryService {
+  rpc ListCategories(google.protobuf.Empty) returns (ListCategoriesResponse);
+  rpc UpdateCategoryStatus(UpdateCategoryStatusRequest) returns (google.protobuf.Empty);
+}
+
+service MessageService {
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse);
+  rpc CreateMessage(CreateMessageRequest) returns (Message);
+  rpc GetMessage(GetMessageRequest) returns (Message);
+  rpc DeleteMessage(DeleteMessageRequest) returns (google.protobuf.Empty);
+  rpc MarkMessageRead(MarkMessageReadRequest) returns (google.protobuf.Empty);
+}
+
+// ------------------- 详细请求结构 -------------------
+message GetUserRequest { string id = 1; }
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string profile_picture = 3;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  User user = 2;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string username = 2;
+  optional string email = 3;
+  optional string profile_picture = 4;
+}
+
+message UpdatePasswordRequest {
+  string id = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message GetProductRequest { string id = 1; }
+
+message CreateProductRequest {
+  string name = 1;
+  string detail = 2;
+  repeated string cover_list = 3;
+  int32 old_level = 4;
+  string category_id = 5;
+  string user_id = 6;
+  int32 inventory = 7;
+  double price = 8;
+  bool is_bargain = 9;
+}
+
+message UpdateProductRequest {
+  string id = 1;
+  optional double price = 2;
+  optional int32 inventory = 3;
+}
+
+message DeleteProductRequest { string id = 1; }
+
+message ListUserProductsRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message GetOrderRequest { string id = 1; }
+
+message CreateOrderRequest {
+  string code = 1;
+  string detail = 2;
+  string product_id = 3;
+  double buy_price = 4;
+  OrderStatus status = 5;
+}
+
+message UpdateOrderRequest {
+  string id = 1;
+  Order order = 2;
+}
+
+message DeleteOrderRequest { string id = 1; }
+
+message ListCommentsRequest {
+  optional string product_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message ListCommentsResponse {
+  repeated Comment comments = 1;
+  Pagination pagination = 2;
+}
+
+message CreateCommentRequest {
+  string user_id = 1;
+  string product_id = 2;
+  string content = 3;
+}
+
+message GetCommentRequest { string id = 1; }
+
+message ListInteractionsRequest {
+  optional string user_id = 1;
+  optional InteractionType type = 2;
+  int32 page = 3;
+  int32 size = 4;
+}
+
+message ListInteractionsResponse {
+  repeated Interaction interactions = 1;
+  Pagination pagination = 2;
+}
+
+message CreateInteractionRequest {
+  string user_id = 1;
+  string product_id = 2;
+  InteractionType type = 3;
+}
+
+message GetUserProductInteractionRequest {
+  string user_id = 1;
+  string product_id = 2;
+}
+
+message DeleteInteractionRequest { string id = 1; }
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message UpdateCategoryStatusRequest {
+  repeated string category_ids = 1;
+  bool is_use = 2;
+}
+
+message ListMessagesRequest {
+  optional string user_id = 1;
+  optional bool is_read = 2;
+  int32 page = 3;
+  int32 size = 4;
+}
+
+message ListMessagesResponse {
+  repeated Message messages = 1;
+  Pagination pagination = 2;
+}
+
+message CreateMessageRequest {
+  string user_id = 1;
+  string content = 2;
+}
+
+message GetMessageRequest { string id = 1; }
+
+message DeleteMessageRequest { string id = 1; }
+
+message MarkMessageReadRequest { string id = 1; } 
