@@ -1,6 +1,6 @@
 # 校园二手交易平台
 ## 1、系统架构概述
-```
+```mermaid
 graph TD;
     subgraph 本地开发环境
         A1[前端 Vue+ Pinia + Axios + Vue Router]
@@ -40,7 +40,7 @@ graph TD;
  - 处理用户数据、商品信息、订单等
  
 ## 4、关键架构设计
-```
+```mermaid
 sequenceDiagram
     participant 用户
     participant Vue前端
