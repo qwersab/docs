@@ -1,83 +1,17 @@
-<!-- <script setup>
-import {ref} from 'vue'
-const props=defineProps({
-  product:{
-    type:Object,
-    required:true
-  },
-  showActions:{
-    type:Boolean,
-    default:false
-  }
-})
-
-//互动行为初始状态
-const product=ref({
-  ...props.product,
-  wantsCount:0,
-  isCollected:false,
-  isViewed:false
-})
-
-// 解析 cover_list 字符串，提取第一张图片的 URL
-const getFirstImageUrl = (cover_list) => {
-  // 如果 cover_list 为空或 undefined，返回默认图片
-  if (!cover_list) {
-    return 'https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png';
-  }
-
-  // 直接返回 cover_list，因为它已经是一个图片链接
-  return cover_list;
-};
-</script>
-
-<template>
-   <el-card style="max-width: 450px;">
-    <img 
-    :src="getFirstImageUrl(props.product.cover_list)" 
-    alt=""
-    style="width: 100%;height: 250px; object-fit: cover;" />
-    <template #footer>
-      <el-tag
-      effect="light"
-      round
-      :type="product.is_bargain ? 'success' : 'info'"
-      >
-        {{ product.is_bargain ? '支持砍价' : '不支持砍价' }}
-      </el-tag>
-      <span class="product-name">{{ product.name }}</span>
-      <div class="product-price">￥ {{ product.price }}</div>
-      <span class="product-wants">{{ product.wantsCount }} 人想要</span>
-      <div v-if="showActions" class="actions">
-        <el-button type="primary">编辑</el-button>
-        <el-button>删除</el-button>
-      </div>
-    </template>
-  </el-card>
-</template>
-
-<style scoped>
-.product-name {
-  font-size: 16px;
-  font-weight: bold;
-  margin: 10px 0;
-}
-
-.product-price {
-  font-size: 18px;
-  color: #f56c6c;
-  margin: 5px 0;
-}
-
-.product-wants {
-  font-size: 14px;
-  color: #909399;
-}
-</style> -->
-
 <script setup>
-import { ref } from 'vue';
+import { ref ,onMounted} from 'vue';
+import { delproduct, getuseradd } from '@/api';
+import router from '@/router';
+import { ElMessage } from 'element-plus';
+import { useUserProductStore } from '@/stores/useProductStore';
 
+const publisherAvatar = ref(null);
+const defaultAvatar = ref('https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png');
+const prousername=ref('默认用户名')
+const productStore = useUserProductStore();
+onMounted(() => {
+  productStore.fetchProducts();
+});
 const props = defineProps({
   product: {
     type: Object,
@@ -110,6 +44,31 @@ const getFirstImageUrl = (cover_list) => {
   // 直接返回 cover_list，因为它已经是一个图片链接
   return firstUrl;
 };
+
+const handleEdit=()=>{
+  router.push(`/submitproduct/${product.value.id}`)
+}
+
+onMounted(()=>{
+  const getuserAdd=async()=>{
+    const {data}=await getuseradd(product.value.user_id)
+    publisherAvatar.value=data.profile_picture
+    prousername.value=data.username
+  }
+  getuserAdd()
+});
+
+const handleDel=async()=>{
+  const response=await delproduct(product.value.id)
+  ElMessage({
+        message: '商品删除成功',
+        type: 'success',
+  })
+  productStore.fetchProducts(); // 重新获取商品列表
+  console.log(response.data);
+  
+  
+}
 </script>
 
 <template>
@@ -132,8 +91,12 @@ const getFirstImageUrl = (cover_list) => {
       <span class="product-wants">{{ product.wantsCount }} 人想要</span>
       <!-- 条件渲染操作按钮 -->
       <div v-if="showActions" class="actions">
-        <el-button type="primary">编辑</el-button>
-        <el-button>删除</el-button>
+        <el-button type="primary" @click="handleEdit">编辑</el-button>
+        <el-button @click="handleDel">删除</el-button>
+      </div>
+      <div v-if="!showActions" class="actions">
+        <el-avatar :size="40" :src="publisherAvatar || defaultAvatar" />
+        <span>{{ prousername }}</span>
       </div>
     </template>
   </el-card>

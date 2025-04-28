@@ -58,3 +58,28 @@ export const addproduct=(data)=>{
 export const getmyproduct=()=>{
   return request.get('/user/products/')
 }
+
+//获取所有商品
+export const getallproduct=()=>{
+  return request.get('/products')
+}
+
+//根据用户id获取用户信息，用于在所有商品界面获得发布该商品的用户头像和用户名
+export const getuseradd=(userId)=>{
+  return request.get(`/users/${userId}/`)
+}
+
+//根据商品id获取商品信息，用于商品详情页/商品编辑页
+export const getproductbyid=(productId)=>{
+  return request.get(`/products/${productId}`)
+}
+
+//编辑商品接口
+export const editproduct=(productId,data)=>{
+  return request.patch(`/products/${productId}/update/`,data)
+}
+
+//删除商品接口
+export const delproduct=(productId)=>{
+  return request.delete(`/products/${productId}/delete/`)
+}

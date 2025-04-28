@@ -12,7 +12,7 @@ export const useUserProductStore=defineStore('userProduct',{
         this.products=response.data
 
       }catch(error){
-        console.log('获取商品失败',error);
+        console.log('获取用户发布商品失败',error);
       }
     }
   }

@@ -20,6 +20,7 @@ const routes=[
     path:'/',
     component:Layout,
     name:'main',
+    redirect:'/allproduct',
     children:[
       {
         path:'/allproduct',
@@ -61,6 +62,11 @@ const routes=[
         component:Mine,
         meta:{title:'个人中心',requireAuth:true}
       },
+      {
+        path: '/submitproduct/:id',
+        name: 'EditProduct',
+        component: () => import('@/views/submitProduct/index.vue')
+      }
     ]
   },
   {

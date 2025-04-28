@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref,onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import type { FormItemProps, FormProps,UploadProps, UploadUserFile,TagProps} from 'element-plus'
-import { uploadimages ,addproduct} from '@/api'
+import { uploadimages ,addproduct,getproductbyid, editproduct } from '@/api'
 import {ElMessage} from 'element-plus'
+import { useRoute ,useRouter} from 'vue-router';
+
+const route = useRoute();
+const router=useRouter()
+const productId = route.params.id; // 获取路由参数中的商品 ID
 
 const labelPosition = ref<FormProps['labelPosition']>('top')
 const itemLabelPosition = ref<FormItemProps['labelPosition']>('')
@@ -39,50 +44,32 @@ const handlePictureCardPreview: UploadProps['onPreview'] = (uploadFile) => {
   dialogVisible.value = true
 }
 
-
-// 自定义上传逻辑
+//自定义上传逻辑
 const customUploadRequest = async (options: any) => {
-  let files;
-  if (options.fileList) {
-    files = options.fileList.map((file: any) => file.raw);
-  } else if (options.file) {
-    files = [options.file];
-  } else {
-    console.error('未找到文件对象');
-    options.onError('未找到文件对象');
-    return;
-  }
+  const { file, onProgress, onSuccess, onError } = options;
+  const files = [file];
 
   try {
+    onProgress({ percent: 0 }); // 开始上传
     const response = await uploadimages(files); // 调用上传接口
     console.log('上传成功', response);
-    //图片url在responsr.data.urls里
-     console.log(response.data.urls);
-    
 
-    // 更新 fileList 中的文件信息
+    // 图片 URL 在 response.data.urls 里
     if (response.data && Array.isArray(response.data.urls)) {
-      response.data.urls.forEach((item: any, index: number) => {
-        const urlMatch = item.match(/http[s]?:\/\/[^"]+/);
-        if(urlMatch){
-          const url = urlMatch[0];
-          if (fileList.value[index]) {
-          fileList.value[index].url = url; 
-          console.log(url);
-          }
-        }else{
-          console.error("无法提取有效的 URL", item);
-        }
-        
-      });
+      const url = response.data.urls[0];
+      const index = fileList.value.findIndex((item) => item.uid === file.uid);
+      if (index !== -1) {
+        fileList.value[index].url = url;
+        fileList.value[index].status = 'success'; // 更新状态为成功
+      }
     }
 
     ElMessage.success('图片上传成功');
-    options.onSuccess('success');
+    onSuccess('success');
   } catch (error) {
     console.error('上传失败', error);
     ElMessage.error('图片上传失败');
-    options.onError(error);
+    onError(error);
   }
 };
 
@@ -134,17 +121,67 @@ const submitProduct=async()=>{
       price: formLabelAlign.price,
     }
     console.log('提交的数据:', productData); // 打印提交的数据
+    if (productId) {
+      // 如果是编辑商品，调用编辑接口
+      const response = await editproduct(productId, productData);
+      ElMessage({
+        message: '商品编辑成功',
+        type: 'success',
+      })
+      console.log('商品编辑成功', response.data);
+      //跳转回我的商品界面
+      router.push('/myproduct')
 
-    const response = await addproduct(productData);
-    ElMessage.success('商品发布成功');
-    console.log('商品发布成功', response.data);
+    } else {
+      // 如果是发布商品，调用发布接口
+      const response = await addproduct(productData);
+      ElMessage({
+        message: '商品发布成功',
+        type: 'success',
+      })
+      console.log('商品发布成功', response.data);
+      router.push('/myproduct')
+    }
 
   }catch (error) {
-    ElMessage.error('商品发布失败');
-    console.error('商品发布失败', error);
+    ElMessage.error('商品操作失败');
+    console.error('商品操作失败', error);
   }
 
 }
+
+// 如果是编辑商品，根据商品 ID 获取商品信息
+onMounted(async () => {
+  if (productId) {
+    try {
+      const { data } = await getproductbyid(productId);
+      console.log(data);
+     
+      // 解析 cover_list 字符串为数组
+      let coverList: string[] = [];
+      if (data.cover_list) {
+        // 分割字符串为数组
+        coverList = data.cover_list.split(',').map(url => url.trim());
+      }
+
+      
+      formLabelAlign.name=data.name
+      formLabelAlign.categoryId = data.category_id;
+      formLabelAlign.coverList = coverList
+      formLabelAlign.detail = data.detail;
+      formLabelAlign.inventory = data.inventory;
+      formLabelAlign.isBargain = data.is_bargain;
+      formLabelAlign.oldLevel = data.old_level;
+      formLabelAlign.price = data.price;
+
+      // 初始化 fileList 用于图片预览
+      fileList.value = coverList.map(url => ({ url, status: 'success' }));
+
+    } catch (error) {
+      console.error('Failed to fetch product information:', error);
+    }
+  }
+});
 
 
 
@@ -178,7 +215,10 @@ const submitProduct=async()=>{
           />
         </el-form-item>
       </el-form>
-      <el-button type="primary" @click="submitProduct">发布商品</el-button>
+      <el-button type="primary" @click="submitProduct">
+        <span v-if="productId">编辑商品</span>
+        <span v-else>发布商品</span>
+      </el-button>
     </div>
     <div class="right">
       <el-form
@@ -243,5 +283,12 @@ const submitProduct=async()=>{
     margin-left: 50px;
     height: 100%;
   }
+}
+.custom-message {
+  position: fixed !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 1000 !important;
 }
 </style>
