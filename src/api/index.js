@@ -83,3 +83,9 @@ export const editproduct=(productId,data)=>{
 export const delproduct=(productId)=>{
   return request.delete(`/products/${productId}/delete/`)
 }
+
+//获取分类id,或者是否支持砍价或者某个价格区间的商品的商品
+export const getcategorypro=(params)=>{
+  const query = new URLSearchParams(params).toString();
+  return request.get(`/products/?${query}`)
+}
