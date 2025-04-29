@@ -69,10 +69,14 @@ const handleDel=async()=>{
   
   
 }
+
+const handleCardClick=()=>{
+  router.push(`/product/${props.product.id}`);
+}
 </script>
 
 <template>
-  <el-card class="product-card">
+  <el-card class="product-card" @click="handleCardClick">
     <img
       :src="getFirstImageUrl(product.cover_list)"
       alt=""
@@ -109,6 +113,7 @@ const handleDel=async()=>{
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  cursor: pointer;
 }
 
 .responsive-image {

@@ -66,6 +66,11 @@ const routes=[
         path: '/submitproduct/:id',
         name: 'EditProduct',
         component: () => import('@/views/submitProduct/index.vue')
+      },
+      {
+        path:'/product/:id',
+        name:'ProductDetail',
+        component:()=>import('@/views/productdetail/index.vue')
       }
     ]
   },
