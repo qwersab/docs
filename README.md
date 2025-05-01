@@ -62,9 +62,9 @@
   - 确定接口的设计（RESTful API）。
 
 - **技术调研**：
-  - 确定使用的前端技术（Vue 2.x、Vuex、Vue Router、axios）。
-  - 确定后端框架（Spring Boot、MyBatis）。
-  - 数据库（MySql）。
+  - 确定使用的前端技术（Vue 3、pinia、Vue Router、axios）。
+  - 确定后端框架（Django）。
+  - 数据库（Sqlite）。
 
 **输出**：
 - 完成数据库表设计文档。
