@@ -1,6 +1,6 @@
 <script setup>
 import { ref ,onMounted} from 'vue';
-import { delproduct, getuseradd } from '@/api';
+import { delproduct, getuseradd,getprointeraction } from '@/api';
 import router from '@/router';
 import { ElMessage } from 'element-plus';
 import { useUserProductStore } from '@/stores/useProductStore';
@@ -49,13 +49,20 @@ const handleEdit=()=>{
   router.push(`/submitproduct/${product.value.id}`)
 }
 
-onMounted(()=>{
+onMounted(async()=>{
   const getuserAdd=async()=>{
     const {data}=await getuseradd(product.value.user_id)
     publisherAvatar.value=data.profile_picture
     prousername.value=data.username
   }
   getuserAdd()
+  try {
+    const prointeraction=await getprointeraction(product.value.id);
+    product.value.wantsCount=prointeraction.data.want_count;
+
+  } catch (error) {
+    console.error('获取商品被想要/收藏/浏览数失败', error);
+  }
 });
 
 const handleDel=async()=>{

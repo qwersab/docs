@@ -22,7 +22,7 @@ const userInfo = ref({
 const items = ref([
   { type: 'warning', label: `商品被浏览${userInfo.value.viewCount}` },
   { type: 'warning', label: `商品被收藏${userInfo.value.favoriteCount}` },
-  { type: 'warning', label: `商品被浏览${userInfo.value.wantCount}` },
+  { type: 'warning', label: `商品被想要${userInfo.value.wantCount}` },
   
 ])
 

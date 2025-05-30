@@ -89,3 +89,24 @@ export const getcategorypro=(params)=>{
   const query = new URLSearchParams(params).toString();
   return request.get(`/products/?${query}`)
 }
+
+//添加互动行为
+export const getinteraction=(data)=>{
+  return request.post(`/interactions/`,data)
+}
+// 获取所有已经想要过的商品
+export const getwant=()=>{
+  return request.get(`/interactions/want/`)
+}
+
+// 获取所有已经想要过的商品
+export const getcollection=()=>{
+  return request.get(`/interactions/favorite/`)
+}
+
+// 获取单个商品对应的被想要/收藏/浏览数
+
+export const getprointeraction=(productId)=>{
+  return request.get(`/interactions/stat/?product_id=${productId}`)
+}
+

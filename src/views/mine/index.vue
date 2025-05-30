@@ -3,16 +3,18 @@ import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getuser ,modifyuser,uploadpicture,modifypwd} from '@/api';
 
-interface Form{
-  name:string,
-  email:string,
-  avatar:string
+interface Form {
+  profile: {
+    username: string;
+    email: string;
+    profile_picture: string;
+  };
+  password: {
+    old_password: string;
+    new_password: string;
+    confirm_password: string;
+  };
 }
-const form=ref<Form>({
-  name:'',
-  email:'',
-  avatar:''
-})
 
 
 const currentFormType=ref<string>('profile')
@@ -23,9 +25,9 @@ const forms=ref({
     profile_picture:''
   },
   password:{
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    old_password: '',
+    new_password: '',
+    confirm_password: ''
   }
 
 })
@@ -104,6 +106,7 @@ const submitProfileForm = async () => {
 
 const submitPwdForm=async()=>{
   try{
+    console.log('提交的个人资料表单数据:', forms.value.password);
     const response11=await modifypwd(forms.value.password)
     ElMessage.success('修改密码成功')
     console.log(response11,'修改密码后');
@@ -152,13 +155,13 @@ getUserInfo()
   <div v-if="currentFormType==='password'">
     <el-form :model="forms.password" label-width="auto" style="max-width: 600px">
       <el-form-item label="原密码" >
-        <el-input v-model="forms.password.oldPassword" type="password"/>
+        <el-input v-model="forms.password.old_password" type="password"/>
       </el-form-item>
       <el-form-item label="新密码">
-        <el-input v-model="forms.password.newPassword" type="password"/>
+        <el-input v-model="forms.password.new_password" type="password"/>
       </el-form-item>
       <el-form-item label="确认密码">
-        <el-input v-model="forms.password.confirmPassword" type="password"/>
+        <el-input v-model="forms.password.confirm_password" type="password"/>
       </el-form-item>
       
     </el-form>

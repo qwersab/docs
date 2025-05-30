@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
-import { getproductbyid ,getuseradd,getuser} from '@/api';
+import { getproductbyid ,getuseradd,getuser,getinteraction,getprointeraction} from '@/api';
 import { useRoute } from 'vue-router';
-
+// 浏览1 收藏2 想要3
 interface Product{
   id: number,
   name: string,
@@ -29,6 +29,13 @@ interface Mine{
   profile_picture: string;
 }
 
+interface Interaction{
+  product_id: number,
+  want_count: number,
+  browse_count: number,
+  favorite_count: number
+}
+
 const route = useRoute();
 const product = ref<Product | null>(null);
 const coverListarr = ref<string[]>([]);
@@ -37,6 +44,7 @@ const me=ref<Mine|null>(null)
 const textarea = ref('')
 const dialogVisible = ref(false)
 const num = ref(1)
+const interaction=ref<Interaction|null>(null)
 const comments = ref([
   {
     id: 1,
@@ -87,6 +95,17 @@ onMounted(async () => {
   } catch (error) {
     console.error('获取本人用户信息失败', error);
   }
+
+
+  try {
+    const prointeraction=await getprointeraction(product.value.id);
+    interaction.value=prointeraction.data
+
+  } catch (error) {
+    console.error('获取商品被想要/收藏/浏览数失败', error);
+  }
+
+  
   
 });
 
@@ -96,6 +115,33 @@ const handlebuy=()=>{
 
 const handleChange = (value: number | undefined) => {
   console.log(value)
+}
+
+const handlewant=async()=>{
+  try {
+    const { data } = await getinteraction({
+      user_id:me.value.id,
+      product_id:product.value.id,
+      type:3});
+    console.log(data,'sidubc')
+
+   
+  } catch (error) {
+    console.error('想要失败', error);
+  }
+}
+const handleCollect=async()=>{
+  try {
+    const { data } = await getinteraction({
+      user_id:me.value.id,
+      product_id:product.value.id,
+      type:2});
+    console.log(data,'sidubc')
+
+   
+  } catch (error) {
+    console.error('想要失败', error);
+  }
 }
 </script>
 
@@ -119,11 +165,11 @@ const handleChange = (value: number | undefined) => {
         
       </div>
       <div class="right-header2">
-        0 人想要 · 1人收藏 · 3人浏览
+        {{interaction.want_count}}人想要 · {{interaction.favorite_count}}人收藏 · {{interaction.browse_count}}人浏览
       </div>
       <div style="font-size: 18px; font-weight: 500;">{{ product.name }}</div>
       <el-button-group>
-        <el-button type="primary"  class="rounded-button1">我想要</el-button>
+        <el-button type="primary"  class="rounded-button1" @click="handlewant">我想要</el-button>
         <el-button type="info" class="rounded-button2" @click="handlebuy">
           立即购买
         </el-button>
@@ -160,7 +206,7 @@ const handleChange = (value: number | undefined) => {
             </div>
           </template>
         </el-dialog>
-        <el-button style="margin-left: 200px; border-radius: 20px;" type="info">取消收藏</el-button>
+        <el-button style="margin-left: 200px; border-radius: 20px;" type="info" @click="handleCollect">收藏</el-button>
       </el-button-group>
       <div class="commet">
         <div>评论</div>
