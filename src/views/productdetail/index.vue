@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
-import { getproductbyid ,getuseradd,getuser,getinteraction,getprointeraction} from '@/api';
+import { getproductbyid ,getuseradd,getuser,getinteraction,getprointeraction, getcollectionboolean, cancelcollection, order } from '@/api';
 import { useRoute } from 'vue-router';
+import { ElMessage } from 'element-plus';
 // 浏览1 收藏2 想要3
 interface Product{
   id: number,
@@ -65,6 +66,8 @@ const comments = ref([
     timestamp: '2024-04-29 11:00',
   },
 ]);
+const isCollected = ref(false);
+const orderLoading = ref(false);
 onMounted(async () => {
   try {
     const { data } = await getproductbyid(route.params.id as string);
@@ -79,7 +82,6 @@ onMounted(async () => {
       const publishReponse=await getuseradd(data.user_id)
       pubulisher.value=publishReponse.data
       console.log(publishReponse);
-      
       
     } catch (error) {
       console.error('获取发布者信息失败', error);
@@ -96,17 +98,32 @@ onMounted(async () => {
     console.error('获取本人用户信息失败', error);
   }
 
+  try {
+    // 只记录浏览，不触发收藏
+    const { data } = await getinteraction({
+      user_id:me.value.id,
+      product_id:product.value.id,
+      type:1  // 1表示浏览
+    });
+  } catch (error) {
+    console.error('浏览失败', error);
+  }
 
   try {
+    // 获取商品的交互数据（浏览、收藏、想要数量）
     const prointeraction=await getprointeraction(product.value.id);
     interaction.value=prointeraction.data
-
   } catch (error) {
     console.error('获取商品被想要/收藏/浏览数失败', error);
   }
 
-  
-  
+  // 判断是否已收藏
+  try {
+    const res = await getcollectionboolean(product.value.id);
+    isCollected.value = !!res.data.is_favorite;
+  } catch (error) {
+    isCollected.value = false;
+  }
 });
 
 const handlebuy=()=>{
@@ -123,26 +140,56 @@ const handlewant=async()=>{
       user_id:me.value.id,
       product_id:product.value.id,
       type:3});
-    console.log(data,'sidubc')
 
    
   } catch (error) {
     console.error('想要失败', error);
   }
 }
-const handleCollect=async()=>{
+const handleCollect = async () => {
+  if (!isCollected.value) {
+    // 收藏
+    try {
+      await getinteraction({
+        user_id: me.value.id,
+        product_id: product.value.id,
+        type: 2
+      });
+      isCollected.value = true;
+      interaction.value.favorite_count++;
+    } catch (error) {
+      // 错误处理
+    }
+  } else {
+    // 取消收藏
+    try {
+      await cancelcollection({'product_id':product.value.id});
+      isCollected.value = false;
+      interaction.value.favorite_count--;
+    } catch (error) {
+      // 错误处理
+    }
+  }
+};
+
+const submitOrder = async () => {
+  if (!product.value) return;
+  orderLoading.value = true;
   try {
-    const { data } = await getinteraction({
-      user_id:me.value.id,
-      product_id:product.value.id,
-      type:2});
-    console.log(data,'sidubc')
-
-   
+    const res = await order({
+      detail: textarea.value ? `买家留言：${textarea.value}` : '',
+      product: product.value.id,
+      buy_price: (product.value.price * num.value).toFixed(2),
+      trade_status: 0
+    });
+    orderLoading.value = false;
+    dialogVisible.value = false;
+    ElMessage.success('下单成功，订单号：' + res.data.code);
   } catch (error) {
-    console.error('想要失败', error);
+    orderLoading.value = false;
+    ElMessage.error('下单失败，请检查信息');
   }
-}
+};
 </script>
 
 <template>
@@ -200,13 +247,19 @@ const handleCollect=async()=>{
           <template #footer>
             <div class="dialog-footer">
               <el-button @click="dialogVisible = false">取消下单</el-button>
-              <el-button type="primary" @click="dialogVisible = false">
+              <el-button type="primary" :loading="orderLoading" @click="submitOrder">
                 确定下单
               </el-button>
             </div>
           </template>
         </el-dialog>
-        <el-button style="margin-left: 200px; border-radius: 20px;" type="info" @click="handleCollect">收藏</el-button>
+        <el-button
+          style="margin-left: 200px; border-radius: 20px;"
+          :type="isCollected ? 'primary' : 'info'"
+          @click="handleCollect"
+        >
+          {{ isCollected ? '取消收藏' : '收藏' }}
+        </el-button>
       </el-button-group>
       <div class="commet">
         <div>评论</div>

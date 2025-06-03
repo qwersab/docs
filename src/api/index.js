@@ -99,14 +99,35 @@ export const getwant=()=>{
   return request.get(`/interactions/want/`)
 }
 
-// 获取所有已经想要过的商品
+// 获取所有已经收藏过的商品
 export const getcollection=()=>{
   return request.get(`/interactions/favorite/`)
 }
 
+//取消收藏
+
+export const cancelcollection=(productId)=>{
+  return request.post(`/interactions/unfavorite/`,productId)
+}
+
+//获取用户是否收藏了某个商品
+
+export const getcollectionboolean=(productId)=>{
+  return request.get(`/interactions/is-favorite/?product_id=${productId}`)
+}
 // 获取单个商品对应的被想要/收藏/浏览数
 
 export const getprointeraction=(productId)=>{
   return request.get(`/interactions/stat/?product_id=${productId}`)
 }
 
+//获取用户浏览过的所有商品
+
+export const getfootprint=()=>{
+  return request.get(`/interactions/browsed/`)
+}
+
+//下单接口
+export const order=(data)=>{
+  return request.post(`/orders/create/`,data)
+}
