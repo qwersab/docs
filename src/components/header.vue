@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import {getuser} from '../api/index'
+import { ElMessage } from 'element-plus';
 
 const router=useRouter()
 
@@ -57,9 +58,9 @@ const handleSelect = (index) => {
     case '5':
       router.push('/order'); // 跳转到订单页面
       break;
-    case '6':
-      router.push('/notice'); // 跳转到通知页面
-      break;
+    // case '6':
+    //   router.push('/notice'); // 跳转到通知页面
+    //   break;
     case '7':
       router.push('/submitproduct'); // 跳转到发布商品页面
       break;
@@ -76,6 +77,14 @@ const handleSelect = (index) => {
       console.log('未知的菜单项');
   }
 }
+
+const handleSearch = () => {
+  if (!input.value.trim()) {
+    ElMessage.warning('请输入搜索内容');
+    return;
+  }
+  router.push({ path: '/allproduct', query: { keyword: input.value.trim() } });
+};
 </script>
 
 <template>
@@ -147,13 +156,13 @@ const handleSelect = (index) => {
       style="flex: 1; justify-content: flex-end;"
     >
       <template v-if="isLoggedIn">
-        <el-input v-model="input" style="width: 150px; height: 30px; line-height: height;" placeholder="请输入要搜索的商品" />
+        <el-input v-model="input" style="width: 150px; height: 30px; line-height: height;" placeholder="请输入要搜索的商品" @keyup.enter="handleSearch" />
         <el-menu-item index="5">订单</el-menu-item>
-        <el-menu-item index="6">通知</el-menu-item>
+        <!-- <el-menu-item index="6">通知</el-menu-item> -->
         <el-menu-item index="7">发布商品</el-menu-item>
         <el-sub-menu index="8">
           <template #title>
-            <el-avatar src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"/>
+            <el-avatar :src="userInfo.avatar || 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'" />
           </template>
           <el-menu-item index="8-1">退出</el-menu-item>
         </el-sub-menu>

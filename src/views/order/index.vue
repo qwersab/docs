@@ -1,35 +1,52 @@
 <script setup>
+import { ref, onMounted } from 'vue';
+import { getbuyorder, getsellorder } from '@/api/index.js';
 import { ElMessage } from 'element-plus';
 import 'element-plus/theme-chalk/el-message.css';
+import order from '@/components/order.vue';
 
-const open2 = () => {
-  ElMessage({
-    showClose: true,
-    message: 'Congrats, this is a success message.',
-    type: 'success',
-  })
-}
+const activeName = ref('first');
+const buyOrders = ref([]);
+const sellOrders = ref([]);
+const loading = ref(false);
 
+const fetchOrders = async () => {
+  loading.value = true;
+  try {
+    const [buyRes, sellRes] = await Promise.all([
+      getbuyorder(),
+      getsellorder()
+    ]);
+    buyOrders.value = buyRes.data || [];
+    sellOrders.value = sellRes.data || [];
+  } catch (e) {
+    ElMessage.error('订单获取失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchOrders();
+});
+
+const handleClick = () => {};
 </script>
 
 <template>
-  <div class="order-list">
-    <div class="order-card">
-      <div class="order-header">
-        <span>订单号 12233314</span>
-      </div>
-      <div class="order-body">
-        <img class="order-img" src="https://img1.doubanio.com/view/subject/l/public/s29578632.jpg" alt="商品图片" />
-        <div class="order-info">
-          <div class="order-title">高数书 <span class="order-count">×3</span></div>
-          <div class="order-detail">备注：请尽快发货</div>
-          <div class="order-price">￥60.00</div>
-          <div class="order-time">创建时间：2025-1-20 14:30:00</div>
-          <el-button type="primary" size="small">确定退款</el-button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <el-tabs
+    v-model="activeName"
+    type="card"
+    class="demo-tabs"
+    @tab-click="handleClick"
+  >
+    <el-tab-pane label="购物订单" name="first">
+      <order :orders="buyOrders" :loading="loading" userType="buyer" @refresh="fetchOrders" />
+    </el-tab-pane>
+    <el-tab-pane label="卖出订单" name="second">
+      <order :orders="sellOrders" :loading="loading" userType="seller" @refresh="fetchOrders" />
+    </el-tab-pane>
+  </el-tabs>
 </template>
 
 <style scoped>

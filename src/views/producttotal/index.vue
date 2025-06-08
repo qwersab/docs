@@ -1,19 +1,30 @@
 <script setup lang="ts">
 import { allProductStore } from '@/stores/allProductStore';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import productList from '@/components/productList.vue';
 import { ref } from 'vue'
 import type { TabsPaneContext } from 'element-plus'
+import { useRoute } from 'vue-router';
 
 const allproductStore=allProductStore()
 const activeName = ref('all')
 const minPrice = ref(0); // 默认最低价格
 const maxPrice = ref(10000); // 默认最高价格
 const isBargain = ref(false); // 是否支持砍价
+const route = useRoute();
 
 onMounted(()=>{
-  allproductStore.fetchProducts()
+  allproductStore.fetchProducts();
+  if (route.query.keyword) {
+    allproductStore.updateFilterConditions({ keyword: route.query.keyword });
+  } else {
+    allproductStore.updateFilterConditions({ keyword: '' });
+  }
 })
+
+watch(() => route.query.keyword, (newKeyword) => {
+  allproductStore.updateFilterConditions({ keyword: newKeyword || '' });
+});
 
 const applyFilter = () => {
   allproductStore.updateFilterConditions({
@@ -51,7 +62,6 @@ const handleClick2 = (tab: TabsPaneContext, event: Event) => {
   const bargain = isBargainMap[tab.paneName as keyof typeof isBargainMap];
   allproductStore.updateFilterConditions({ isBargain: bargain });
 }
-
 
 // 处理价格变化
 const handlePriceChange = () => {

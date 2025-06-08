@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getuser ,modifyuser,uploadpicture,modifypwd} from '@/api';
-
+import { useRouter } from 'vue-router';
+const router=useRouter()
 interface Form {
   profile: {
     username: string;
@@ -95,7 +96,12 @@ const beforeAvatarUpload = async(file:File) => {
 const submitProfileForm = async () => {
   try {
     console.log('提交的个人资料表单数据:', forms.value.profile);
-    const response=await modifyuser(forms.value.profile);
+    // 只传用户名和邮箱，不传profile_picture
+    const payload = {
+      username: forms.value.profile.username,
+      email: forms.value.profile.email
+    };
+    const response=await modifyuser(payload);
     ElMessage.success('用户信息更新成功');
     console.log(response,'更新后');
     
@@ -113,11 +119,17 @@ const submitPwdForm=async()=>{
     
 
   }catch(error){
-    ElMessage.error('修改密码失败',error)
-
+    if (error && error.response && error.response.data && error.response.data.error) {
+      ElMessage.warning(error.response.data.error);
+    } else {
+      ElMessage.error('修改密码失败');
+    }
   }
 }
 
+const logout=()=>{
+  router.push('/login')
+}
 getUserInfo()
 
 </script>
@@ -126,7 +138,7 @@ getUserInfo()
   <h2 style="font-weight: 400;">个人中心</h2>
   <el-button type="info" @click="switchForm('profile')">修改资料</el-button>
   <el-button type="info" @click="switchForm('password')">修改密码</el-button>
-  <el-button type="info">退出登录</el-button>
+  <el-button type="info" @click="logout">退出登录</el-button>
   <div v-if="currentFormType==='profile'">
     <el-form :model="forms.profile" label-width="auto" style="max-width: 600px">
       <el-form-item label="头像">
@@ -152,7 +164,7 @@ getUserInfo()
     <el-button @click="submitProfileForm">立即修改</el-button>
   </div>
 
-  <div v-if="currentFormType==='password'">
+  <div v-if="currentFormType==='password'" class="password-form-wrapper">
     <el-form :model="forms.password" label-width="auto" style="max-width: 600px">
       <el-form-item label="原密码" >
         <el-input v-model="forms.password.old_password" type="password"/>
@@ -163,14 +175,11 @@ getUserInfo()
       <el-form-item label="确认密码">
         <el-input v-model="forms.password.confirm_password" type="password"/>
       </el-form-item>
-      
     </el-form>
-    <el-button @click="submitPwdForm">立即修改</el-button>
-    
+    <div class="pwd-btn-row">
+      <el-button type="primary" @click="submitPwdForm">立即修改</el-button>
+    </div>
   </div>
- 
-
-  
 </template>
 
 <style scoped>
@@ -199,5 +208,22 @@ getUserInfo()
   width: 178px;
   height: 178px;
   display: block;
+}
+
+.password-form-wrapper {
+  margin-top: 30px;
+  padding: 32px 32px 24px 32px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  max-width: 600px;
+}
+.password-form-wrapper .el-form-item {
+  margin-bottom: 24px;
+}
+.pwd-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 </style>

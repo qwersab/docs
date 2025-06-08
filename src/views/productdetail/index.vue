@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
-import { getproductbyid ,getuseradd,getuser,getinteraction,getprointeraction, getcollectionboolean, cancelcollection, order } from '@/api';
+import { getproductbyid ,getuseradd,getuser,getinteraction,getprointeraction, getcollectionboolean, cancelcollection, order, getComments, comments as postComment } from '@/api';
+import { UserFilled } from '@element-plus/icons-vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import CommentItem from '@/components/CommentItem.vue';
 // 浏览1 收藏2 想要3
 interface Product{
   id: number,
@@ -46,28 +48,12 @@ const textarea = ref('')
 const dialogVisible = ref(false)
 const num = ref(1)
 const interaction=ref<Interaction|null>(null)
-const comments = ref([
-  {
-    id: 1,
-    user: {
-      username: '用户1',
-      profile_picture: 'https://example.com/user1.jpg',
-    },
-    text: '这是一条评论内容',
-    timestamp: '2024-04-29 10:00',
-  },
-  {
-    id: 2,
-    user: {
-      username: '用户2',
-      profile_picture: 'https://example.com/user2.jpg',
-    },
-    text: '这是另一条评论内容',
-    timestamp: '2024-04-29 11:00',
-  },
-]);
+const comments = ref([]);
+const commentContent = ref('');
+const loadingComments = ref(false);
 const isCollected = ref(false);
 const orderLoading = ref(false);
+const replyToId = ref(null); // 当前要回复的评论ID
 onMounted(async () => {
   try {
     const { data } = await getproductbyid(route.params.id as string);
@@ -124,6 +110,8 @@ onMounted(async () => {
   } catch (error) {
     isCollected.value = false;
   }
+
+  await fetchComments();
 });
 
 const handlebuy=()=>{
@@ -188,6 +176,129 @@ const submitOrder = async () => {
   } catch (error) {
     orderLoading.value = false;
     ElMessage.error('下单失败，请检查信息');
+  }
+};
+
+// 递归补充头像字段
+const addProfilePicture = (commentsArr) => {
+  commentsArr.forEach(comment => {
+    // 假设只有自己有头像，其他人用默认
+    comment.profile_picture = comment.user_id === me.value.id ? me.value.profile_picture : '';
+    if (comment.replies && comment.replies.length > 0) {
+      addProfilePicture(comment.replies);
+    }
+  });
+};
+
+const fetchComments = async () => {
+  if (!product.value) return;
+  loadingComments.value = true;
+  try {
+    const { data } = await getComments(product.value.id);
+    
+    // 检查返回的数据结构
+    console.log('评论数据:', data);
+    
+    // 如果后端已经返回了树形结构（带有replies字段），直接使用
+    if (data.length > 0 && data[0].replies !== undefined) {
+      comments.value = data;
+    } else {
+      // 如果后端返回的是扁平结构，需要在前端构建树形结构
+      // 这里假设每条评论都有 id 和可能的 parent_id 字段
+      const commentMap = {};
+      const rootComments = [];
+      
+      // 第一遍遍历，建立映射
+      data.forEach(comment => {
+        // 确保每个评论都有一个空的replies数组
+        comment.replies = [];
+        commentMap[comment.id] = comment;
+      });
+      
+      // 第二遍遍历，构建树形结构
+      data.forEach(comment => {
+        // 检查可能的父评论ID字段名
+        const parentId = comment.parent_id || comment.parent || null;
+        
+        if (parentId) {
+          // 这是一个回复，将其添加到父评论的replies中
+          const parentComment = commentMap[parentId];
+          if (parentComment) {
+            parentComment.replies.push(comment);
+          } else {
+            // 父评论不存在，作为根评论处理
+            rootComments.push(comment);
+          }
+        } else {
+          // 这是一个根评论
+          rootComments.push(comment);
+        }
+      });
+      
+      comments.value = rootComments;
+    }
+    // 补充头像字段
+    addProfilePicture(comments.value);
+  } catch (e) {
+    ElMessage.error('获取评论失败');
+    console.error('获取评论失败:', e);
+  }
+  loadingComments.value = false;
+};
+
+const submitComment = async () => {
+  if (!commentContent.value.trim()) {
+    ElMessage.warning('评论内容不能为空');
+    return;
+  }
+  try {
+    await postComment({
+      product_id: product.value.id,
+      content: commentContent.value,
+      parent_id: null
+    });
+    ElMessage.success('评论成功');
+    commentContent.value = '';
+    fetchComments();
+  } catch (e) {
+    ElMessage.error('评论失败');
+  }
+};
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
+
+// 显示回复表单
+const showReplyForm = (commentId) => {
+  replyToId.value = commentId;
+};
+
+// 取消回复
+const cancelReply = () => {
+  replyToId.value = null;
+};
+
+// 提交回复（适配递归组件，content为参数）
+const submitReply = async (parentId, content) => {
+  if (!content || !content.trim()) {
+    ElMessage.warning('回复内容不能为空');
+    return;
+  }
+  try {
+    await postComment({
+      product_id: product.value.id,
+      content: content,
+      parent_id: parentId // 设置父评论ID
+    });
+    ElMessage.success('回复成功');
+    replyToId.value = null;
+    fetchComments(); // 重新获取评论列表
+  } catch (e) {
+    ElMessage.error('回复失败');
   }
 };
 </script>
@@ -265,7 +376,7 @@ const submitOrder = async () => {
         <div>评论</div>
         <el-avatar :size="50" :src="me.profile_picture" />
         <el-input
-          v-model="textarea"
+          v-model="commentContent"
           style="width: 240px;margin:0 10px;"
           :rows="2"
           type="textarea"
@@ -274,9 +385,23 @@ const submitOrder = async () => {
           show-word-limit
           :autosize="{ minRows: 2, maxRows: 4 }"
         />
-        <el-button>评论</el-button>
+        <el-button @click="submitComment">评论</el-button>
         <div class="comment-list">
-          评论区待实现
+          <CommentItem
+            v-for="comment in comments"
+            :key="comment.id"
+            :comment="comment"
+            :parentUsername="''"
+            :replyToId="replyToId"
+            :showReplyForm="showReplyForm"
+            :cancelReply="cancelReply"
+            :submitReply="submitReply"
+            :formatDate="formatDate"
+            :me="me"
+          />
+          <div v-if="comments.length === 0" class="no-comments">
+            暂无评论
+          </div>
         </div>
       </div>
     </div>
@@ -331,6 +456,83 @@ const submitOrder = async () => {
     .rounded-button2 {
       border-radius: 0 20px  20px 0; /* 设置较大的 border-radius 值 */
       padding: 10px 20px; /* 调整内边距以适应椭圆形状 */
+    }
+  }
+  
+  .comment-list {
+    margin-top: 20px;
+    width: 100%;
+    
+    .comment-item {
+      padding: 15px 0;
+      border-bottom: 1px solid #f0f0f0;
+      
+      .comment-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        
+        .comment-info {
+          margin-left: 10px;
+          
+          .comment-username {
+            font-weight: 500;
+            font-size: 14px;
+          }
+          
+          .comment-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+          }
+        }
+      }
+      
+      .comment-content {
+        margin-left: 50px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #333;
+      }
+      
+      .comment-actions {
+        margin-left: 50px;
+        margin-top: 5px;
+      }
+      
+      .reply-form {
+        margin-left: 50px;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        
+        .reply-buttons {
+          margin-top: 10px;
+          display: flex;
+          justify-content: flex-end;
+        }
+      }
+      
+      .comment-replies {
+        margin-left: 50px;
+        margin-top: 10px;
+        
+        .reply-item {
+          padding: 10px;
+          background-color: #f9f9f9;
+          border-radius: 4px;
+          margin-bottom: 8px;
+          
+          .comment-content {
+            margin-left: 40px;
+          }
+        }
+      }
+    }
+    
+    .no-comments {
+      text-align: center;
+      color: #999;
+      padding: 20px 0;
     }
   }
 }

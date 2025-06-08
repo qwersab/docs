@@ -131,3 +131,28 @@ export const getfootprint=()=>{
 export const order=(data)=>{
   return request.post(`/orders/create/`,data)
 }
+
+//获取本人购买的订单
+export const getbuyorder=()=>{
+  return request.get(`/orders/buy/`)
+}
+
+//获取本人卖出的订单
+export const getsellorder=()=>{
+  return request.get(`/orders/sell/`)
+}
+//评论接口
+export const comments=(data)=>{
+  return request.post(`/product/comments/`,data)
+}
+
+// 申请退款
+export const postRefund = (data) => request.post('/orders/refund/', data)
+// 卖家审核退款
+export const postReviewRefund = (data) => request.post('/orders/review/refund/', data)
+
+// 卖家审核待交易订单
+export const postReviewOrder = (data) => request.post('/orders/review/', data)
+
+// 获取评论列表（GET），参数直接作为第二参数传递，兼容后端body取参数
+export const getComments = (product_id) => request.get(`/product/comments/?product_id=${product_id}`);
