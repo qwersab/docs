@@ -5,10 +5,12 @@ import type { FormItemProps, FormProps,UploadProps, UploadUserFile,TagProps} fro
 import { uploadimages ,addproduct,getproductbyid, editproduct } from '@/api'
 import {ElMessage} from 'element-plus'
 import { useRoute ,useRouter} from 'vue-router';
+import { useUserProductStore } from '@/stores/useProductStore';
 
 const route = useRoute();
 const router=useRouter()
 const productId = route.params.id; // 获取路由参数中的商品 ID
+const productStore = useUserProductStore();
 
 const labelPosition = ref<FormProps['labelPosition']>('top')
 const itemLabelPosition = ref<FormItemProps['labelPosition']>('')
@@ -129,6 +131,8 @@ const submitProduct=async()=>{
         type: 'success',
       })
       console.log('商品编辑成功', response.data);
+      // 先刷新商品列表，再跳转
+      await productStore.fetchProducts();
       //跳转回我的商品界面
       router.push('/myproduct')
 
@@ -140,6 +144,8 @@ const submitProduct=async()=>{
         type: 'success',
       })
       console.log('商品发布成功', response.data);
+      // 先刷新商品列表，再跳转
+      await productStore.fetchProducts();
       router.push('/myproduct')
     }
 

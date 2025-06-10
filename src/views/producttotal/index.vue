@@ -10,7 +10,7 @@ const allproductStore=allProductStore()
 const activeName = ref('all')
 const minPrice = ref(0); // 默认最低价格
 const maxPrice = ref(10000); // 默认最高价格
-const isBargain = ref(false); // 是否支持砍价
+const isBargain = ref(undefined); // 是否支持砍价
 const route = useRoute();
 
 onMounted(()=>{

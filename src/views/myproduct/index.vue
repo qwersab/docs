@@ -1,12 +1,16 @@
 <script setup>
 import { useUserProductStore } from '@/stores/useProductStore';
-import { onMounted } from 'vue';
+import { onMounted, onActivated } from 'vue';
 import productList from '@/components/productList.vue';
 const productStore=useUserProductStore()
 
 onMounted(()=>{
   productStore.fetchProducts()
 })
+
+onActivated(() => {
+  productStore.fetchProducts();
+});
 
 </script>
 

@@ -128,18 +128,6 @@ const handleSearch = () => {
         
         <div style="margin-left: 10px;">
             <div>{{ userInfo.name }}</div>
-            <div class="flex gap-2">
-              <el-tag
-                v-for="item in items"
-                :key="item.label"
-                :type="item.type"
-                effect="dark"
-                round
-              >
-                {{ item.label }}
-              </el-tag>
-            </div>
-
         </div>
         
       </div>

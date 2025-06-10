@@ -102,8 +102,8 @@ const handleCardClick=()=>{
       <span class="product-wants">{{ product.wantsCount }} 人想要</span>
       <!-- 条件渲染操作按钮 -->
       <div v-if="showActions" class="actions">
-        <el-button type="primary" @click="handleEdit">编辑</el-button>
-        <el-button @click="handleDel">删除</el-button>
+        <el-button type="primary" @click.stop="handleEdit">编辑</el-button>
+        <el-button @click.stop="handleDel">删除</el-button>
       </div>
       <div v-if="!showActions" class="actions">
         <el-avatar :size="40" :src="publisherAvatar || defaultAvatar" />

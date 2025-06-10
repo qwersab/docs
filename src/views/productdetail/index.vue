@@ -128,7 +128,10 @@ const handlewant=async()=>{
       user_id:me.value.id,
       product_id:product.value.id,
       type:3});
-
+    // 成功后本地 want_count +1
+    if (interaction.value) {
+      interaction.value.want_count++;
+    }
    
   } catch (error) {
     console.error('想要失败', error);
@@ -328,7 +331,7 @@ const submitReply = async (parentId, content) => {
       <div style="font-size: 18px; font-weight: 500;">{{ product.name }}</div>
       <el-button-group>
         <el-button type="primary"  class="rounded-button1" @click="handlewant">我想要</el-button>
-        <el-button type="info" class="rounded-button2" @click="handlebuy">
+        <el-button v-if="product.user_id !== me.id" type="info" class="rounded-button2" @click="handlebuy">
           立即购买
         </el-button>
         <el-dialog v-model="dialogVisible" :modal="false">
